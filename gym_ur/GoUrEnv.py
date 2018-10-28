@@ -58,11 +58,11 @@ class GoUrEnv:
     :param dice:
     :return:
     """
-    moves = []
+    actions = []
     for key, piece in enumerate(self.postions[player]):
-      moves.append(self._next_move(piece, player, key, dice))
+      actions.append(self._next_move(piece, player, key, dice))
 
-    return moves
+    return actions
 
 
   def step(self, action):
@@ -84,23 +84,23 @@ class GoUrEnv:
     :param dice:
     :return:
     """
-    move = {
+    action = {
       'piece_id': piece_id,
       'curr_pos': piece,
       'next_post': None,
       'double_move': None,
       'replace_opp': False
     }
-    row, col = move['curr_pos']
+    row, col = action['curr_pos']
     if row == 'a' or row == 'c':
       row, col = self._next_move(row, col, dice, player)
     else:
       row, col, replace_opp = self._war_move(row, col, dice, player)
-      move['replace_opp'] = replace_opp
+      action['replace_opp'] = replace_opp
 
-    move['next_post'] = (row, col)
-    move['double_move'] = is_double((row, col))
-    return move
+    action['next_post'] = (row, col)
+    action['double_move'] = is_double((row, col))
+    return action
 
 
   def _war_move(self, row, col, dice, player):
