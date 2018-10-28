@@ -40,14 +40,14 @@ def is_double(position):
 
 
 class GoUrEnv:
-  def __init__(self, num_pawns=7):
-    #  2D matrix for pawns
+  def __init__(self, num_pieces=7):
+    #  2D matrix for pieces
     # row 1 for player 1 and row 2 for player 2
     # all set to zero
-    self.postions = np.zeros((2, num_pawns))
+    self.postions = np.zeros((2, num_pieces))
 
     # 4 actions -> forward, left, right, void
-    self.action_space = spaces.Discrete(4)
+    # self.action_space = spaces.Discrete(4)
 
 
   def get_possible_actions(self, player, dice):
@@ -135,8 +135,18 @@ class GoUrEnv:
         # check if player1 already has any piece at the same position
         if (row, new_col) not in self.postions[player]:
           col = new_col
+    else:
+      # 8 - (col + dice - 8) + 1
+      new_col = 17 - col - dice
+      new_row = 'a' if player == 0 else 'c'
+      if new_col <= 6:
+        col = 6
+      else:
+        col = new_col
+      row = new_row
 
     return row, col, replace_opp
+
 
   def _safe_move(self, row, col, dice, player):
     """
