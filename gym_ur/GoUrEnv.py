@@ -88,13 +88,15 @@ class GoUrEnv:
       'piece_id': piece_id,
       'curr_pos': piece,
       'next_post': None,
-      'double_move': None
+      'double_move': None,
+      'replace_opp': False
     }
     row, col = move['curr_pos']
     if row == 'a' or row == 'c':
       row, col = self._next_move(row, col, dice, player)
     else:
-      row, col = self._war_move(row, col, dice, player)
+      row, col, replace_opp = self._war_move(row, col, dice, player)
+      move['replace_opp'] = replace_opp
 
     move['next_post'] = (row, col)
     move['double_move'] = is_double((row, col))
@@ -111,6 +113,7 @@ class GoUrEnv:
     :param player:
     :return:
     """
+    replace_opp = False
     if col + dice <= 8:
       new_col = col + dice
 
@@ -121,9 +124,10 @@ class GoUrEnv:
       if (row, new_col) in self.postions[player2]:
         if not is_safe((row, new_col)):
           # strike of player2 piece
-          idx = self.postions[player2].index((row, new_col))
-          self.postions[player2][idx][0] = 'a'
-          self.postions[player2][idx][1] = 5
+          # idx = self.postions[player2].index((row, new_col))
+          # self.postions[player2][idx][0] = 'a'
+          # self.postions[player2][idx][1] = 5
+          replace_opp = True
           col = new_col
         else:
           col = new_col + 1
@@ -132,7 +136,7 @@ class GoUrEnv:
         if (row, new_col) not in self.postions[player]:
           col = new_col
 
-    return row, col
+    return row, col, replace_opp
 
   def _safe_move(self, row, col, dice, player):
     """
