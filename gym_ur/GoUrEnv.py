@@ -58,10 +58,11 @@ class GoUrEnv:
     :param dice:
     :return:
     """
-    op = []
+    moves = []
     for key, piece in enumerate(self.postions[player]):
-      _
+      moves.append(self._next_move(piece, player, key, dice))
 
+    return moves
 
 
   def step(self, action):
@@ -93,13 +94,45 @@ class GoUrEnv:
     if row == 'a' or row == 'c':
       row, col = self._next_move(row, col, dice, player)
     else:
-      
-
+      row, col = self._war_move(row, col, dice, player)
 
     move['next_post'] = (row, col)
     move['double_move'] = is_double((row, col))
     return move
 
+
+  def _war_move(self, row, col, dice, player):
+    """
+    Makes a move in warzone
+
+    :param row:
+    :param col:
+    :param dice:
+    :param player:
+    :return:
+    """
+    if col + dice <= 8:
+      new_col = col + dice
+
+      # check if there is a piece at new position from
+      # other player if yes, strike it off if its not safe
+      # if safe place your piece one step ahead of it
+      player2 = 0 if player == 1 else 1
+      if (row, new_col) in self.postions[player2]:
+        if not is_safe((row, new_col)):
+          # strike of player2 piece
+          idx = self.postions[player2].index((row, new_col))
+          self.postions[player2][idx][0] = 'a'
+          self.postions[player2][idx][1] = 5
+          col = new_col
+        else:
+          col = new_col + 1
+      else:
+        # check if player1 already has any piece at the same position
+        if (row, new_col) not in self.postions[player]:
+          col = new_col
+
+    return row, col
 
   def _safe_move(self, row, col, dice, player):
     """
@@ -114,7 +147,7 @@ class GoUrEnv:
     # player 1 is in safe zone
     # check for already existing piece on next position
     # if exists move can't be made
-    if col > 1 and col - dice >= 1:
+    if col - dice >= 1:
       if col <= 5:
         new_col = col - dice
         # check if there is a piece at new position
