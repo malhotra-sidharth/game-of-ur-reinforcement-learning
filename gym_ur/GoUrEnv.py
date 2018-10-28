@@ -60,12 +60,12 @@ class GoUrEnv:
     """
     op = []
     for key, piece in enumerate(self.postions[player]):
-
+      _
 
 
 
   def step(self, action):
-
+    _
 
 
   def reset(self):
@@ -74,8 +74,8 @@ class GoUrEnv:
 
   def _next_move(self, piece, player, piece_id, dice):
     """
-    Player 1 starts in row a, col 5 and
-    Player 2 starts in row c, col 5
+    Player 0 starts in row a, col 5 and
+    Player 1 starts in row c, col 5
 
     :param piece:
     :param player:
@@ -90,27 +90,44 @@ class GoUrEnv:
       'double_move': None
     }
     row, col = move['curr_pos']
-    if player == 1 and row == 'a':
-      # player 1 is in safe zone
-      # check for already existing piece on next position
-      # if exists move can't be made
-      if col > 1 and col - dice >= 1:
-        new_col = col - dice
+    if row == 'a' or row == 'c':
+      row, col = self._next_move(row, col, dice, player)
+    else:
+      
 
+
+    move['next_post'] = (row, col)
+    move['double_move'] = is_double((row, col))
+    return move
+
+
+  def _safe_move(self, row, col, dice, player):
+    """
+      Makes a safe move for given player
+
+    :param row:
+    :param col:
+    :param dice:
+    :param player:
+    :return:
+    """
+    # player 1 is in safe zone
+    # check for already existing piece on next position
+    # if exists move can't be made
+    if col > 1 and col - dice >= 1:
+      if col <= 5:
+        new_col = col - dice
         # check if there is a piece at new position
         if (row, new_col) not in self.postions[player]:
           col = new_col
-      else:
-        new_col = 1 + np.abs(col - dice)
-        new_row = 'b'
-        # check if there is a piece at new position
-        if (new_row, new_col) not in self.postions[player]:
-          col = new_col
-          row = new_row
+      elif col - dice == 6:
+        col = 6
+    else:
+      new_col = 1 + np.abs(col - dice)
+      new_row = 'b'
+      # check if there is a piece at new position
+      if (new_row, new_col) not in self.postions[player]:
+        col = new_col
+        row = new_row
 
-      move['next_post'] = (row, col)
-      move['double_move'] = is_double((row, col))
-      return move
-
-
-
+    return row, col
