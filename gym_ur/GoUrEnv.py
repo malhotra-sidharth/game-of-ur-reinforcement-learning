@@ -1,6 +1,4 @@
-import gym
 import numpy as np
-from gym import spaces
 
 # dice roll up
 # 4 pyramidal dice
