@@ -66,11 +66,46 @@ class GoUrEnv:
 
 
   def step(self, action):
-    _
+    """
+    Takes one step based on the given action
 
+    :param action:
+    :return: state, reward, done
+    """
+    done = False
+    reward = 0
+    player, piece_id = action['piece_id']
+    opponent = 1 if player == 0 else 0
+    self.postions[player][piece_id] = action['next_pos']
+    if action['replace_opp']:
+      # strike of opponent piece
+      idx = self.postions[opponent].index(action['next_pos'])
+      self.postions[opponent][idx][0] = 'a'
+      self.postions[opponent][idx][1] = 5
+
+    if self._is_win(player):
+      done = True
+      reward = 1
+
+    return self.postions, reward, done, {}
 
   def reset(self):
     self.postions = np.zeros(self.postions.shape)
+
+
+  def _is_win(self, player):
+    """
+    Check if the given player has won the game
+
+    :param player:
+    :return: boolean, True if given player won else False
+    """
+    win_row = 'a' if player == 0 else 'c'
+    for row, col in enumerate(self.postions[player]):
+      if row != win_row and col != 6:
+        return False
+
+      return True
 
 
   def _next_move(self, piece, player, piece_id, dice):
@@ -82,12 +117,12 @@ class GoUrEnv:
     :param player:
     :param piece_id:
     :param dice:
-    :return:
+    :return: dict, next action based on given parameters and state
     """
     action = {
-      'piece_id': piece_id,
+      'piece_id': (player, piece_id),
       'curr_pos': piece,
-      'next_post': None,
+      'next_pos': None,
       'double_move': None,
       'replace_opp': False
     }
@@ -98,7 +133,7 @@ class GoUrEnv:
       row, col, replace_opp = self._war_move(row, col, dice, player)
       action['replace_opp'] = replace_opp
 
-    action['next_post'] = (row, col)
+    action['next_pos'] = (row, col)
     action['double_move'] = is_double((row, col))
     return action
 
@@ -123,10 +158,6 @@ class GoUrEnv:
       player2 = 0 if player == 1 else 1
       if (row, new_col) in self.postions[player2]:
         if not is_safe((row, new_col)):
-          # strike of player2 piece
-          # idx = self.postions[player2].index((row, new_col))
-          # self.postions[player2][idx][0] = 'a'
-          # self.postions[player2][idx][1] = 5
           replace_opp = True
           col = new_col
         else:
