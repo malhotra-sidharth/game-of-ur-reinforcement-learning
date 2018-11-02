@@ -233,33 +233,6 @@ class GoUrEnv:
 
     return row, col, replace_opp
 
-
-  # def _check_opponent(self, player, row, col, new_col):
-  #   """
-  #   Checks if the opponents piece is already at new position
-  #   :param player:
-  #   :param row:
-  #   :param col:
-  #   :param new_row:
-  #   :param new_col:
-  #   :return:
-  #   """
-  #   player2 = 0 if player == 1 else 1
-  #   if not self._search_list_for_tuple(self.postions[player2], (row,
-  #                                                               new_col)):
-  #     if not self.is_safe((row, new_col)):
-  #       replace_opp = True
-  #       col = new_col
-  #     else:
-  #       col = new_col + 1
-  #   else:
-  #     # check if player1 already has any piece at the same position
-  #     if not self._search_list_for_tuple(self.postions[player], (row,
-  #                                                                new_col)):
-  #       col = new_col
-  #
-  #   return row, col, replace_opp
-
   def _search_list_for_tuple(self, lst, tpl):
     """
     Searches for the given tuple in the given list
