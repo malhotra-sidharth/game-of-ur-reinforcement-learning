@@ -62,17 +62,15 @@ class GoUrEnv:
     :param dice: dice output
     :return:
     """
-    actions_with_void = []
     actions = []
     for key, piece in enumerate(self.postions[player]):
-      actions_with_void.append(self._next_move(piece, player, key, dice))
-
-    # check if no change in positions i.e no possible move
-    for action in actions_with_void:
+      action = self._next_move(piece, player, key, dice)
+      # check if no change in positions i.e no possible move
       curr_pos = action['curr_pos']
       next_pos = action['next_pos']
       if curr_pos[0] != next_pos[0] or curr_pos[1] != next_pos[1]:
         actions.append(action)
+
     return actions
 
 
