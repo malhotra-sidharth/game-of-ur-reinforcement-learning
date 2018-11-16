@@ -10,7 +10,7 @@ class GoUrEnv:
     #  2D matrix for pieces
     # row 1 for player 1 and row 2 for player 2
     # all set to zero
-    self.postions = np.zeros((2, num_pieces),dtype=object)
+    self.postions = np.zeros((2, num_pieces), dtype=object)
 
     # dice roll up
     # 4 pyramidal dice
@@ -21,6 +21,9 @@ class GoUrEnv:
 
     # lands on this column gets a second chance
     self.double_chance = [('a', 1), ('a', 7), ('b', 4), ('c', 1), ('c', 7)]
+
+    # actions_space
+    self.action_space_n = num_pieces
 
 
     # 4 actions -> forward, left, right, void
@@ -63,6 +66,7 @@ class GoUrEnv:
     :return:
     """
     actions = []
+    movable_piece_ids = []
     for key, piece in enumerate(self.postions[player]):
       action = self._next_move(piece, player, key, dice)
       # check if no change in positions i.e no possible move
@@ -70,8 +74,9 @@ class GoUrEnv:
       next_pos = action['next_pos']
       if curr_pos[0] != next_pos[0] or curr_pos[1] != next_pos[1]:
         actions.append(action)
+        movable_piece_ids.append(action['piece_id'][1])
 
-    return actions
+    return actions, movable_piece_ids
 
 
   def step(self, action):
@@ -85,22 +90,28 @@ class GoUrEnv:
     reward = 0
     player, piece_id = action['piece_id']
     opponent = 1 if player == 0 else 0
+    start_row = 'a' if opponent == 0 else 'c'
     self.postions[player][piece_id] = action['next_pos']
     if action['replace_opp']:
-      # strike of opponent piece
+      # strike of opponent's piece
       idx = self.postions[opponent].index(action['next_pos'])
-      self.postions[opponent][idx][0] = 'a'
-      self.postions[opponent][idx][1] = 5
+      self.postions[opponent][idx] = (start_row, 5)
+      # self.postions[opponent][piece_id][1] = 5
 
     if self._is_win(player):
       done = True
       reward = 1
 
-    return self.postions[0], self.postions[1], reward, done, {}
+    return (tuple(self.postions[0]), tuple(self.postions[1])), reward, done, {}
 
 
   def reset(self):
-    self.postions = np.zeros(self.postions.shape)
+    self.postions = np.zeros(self.postions.shape, dtype=object)
+    return (tuple(self.postions[0]), tuple(self.postions[1]))
+
+
+  def current_state(self):
+    return (tuple(self.postions[0]), tuple(self.postions[1]))
 
 
   def _is_win(self, player):
@@ -139,9 +150,11 @@ class GoUrEnv:
 
     if action['curr_pos'] == 0:
       if player == 0:
+        self.postions[0][piece_id] = ('a', 5)
         action['curr_pos'] = ('a', 5)
         row, col = ('a', 5)
       else:
+        self.postions[1][piece_id] = ('c', 5)
         action['curr_pos'] = ('c', 5)
         row, col = ('c', 5)
     else:
