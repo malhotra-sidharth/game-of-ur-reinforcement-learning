@@ -66,7 +66,7 @@ class GoUrEnv:
     :return:
     """
     actions = []
-    movable_piece_ids = []
+    movable_piece_ids = {}
     for key, piece in enumerate(self.postions[player]):
       action = self._next_move(piece, player, key, dice)
       # check if no change in positions i.e no possible move
@@ -74,7 +74,7 @@ class GoUrEnv:
       next_pos = action['next_pos']
       if curr_pos[0] != next_pos[0] or curr_pos[1] != next_pos[1]:
         actions.append(action)
-        movable_piece_ids.append(action['piece_id'][1])
+        movable_piece_ids[action['piece_id'][1]] = action
 
     return actions, movable_piece_ids
 
@@ -94,9 +94,8 @@ class GoUrEnv:
     self.postions[player][piece_id] = action['next_pos']
     if action['replace_opp']:
       # strike of opponent's piece
-      idx = self.postions[opponent].index(action['next_pos'])
+      idx = self._find_idx(opponent, action['next_pos'])
       self.postions[opponent][idx] = (start_row, 5)
-      # self.postions[opponent][piece_id][1] = 5
 
     if self._is_win(player):
       done = True
@@ -114,6 +113,12 @@ class GoUrEnv:
     return (tuple(self.postions[0]), tuple(self.postions[1]))
 
 
+  def _find_idx(self, opponent, next_pos):
+    row_next, col_next = next_pos
+    for key, (row, col) in enumerate(self.postions[opponent]):
+      if row == row_next and col == col_next:
+        return key
+
   def _is_win(self, player):
     """
     Check if the given player has won the game
@@ -122,11 +127,11 @@ class GoUrEnv:
     :return: boolean, True if given player won else False
     """
     win_row = 'a' if player == 0 else 'c'
-    for row, col in enumerate(self.postions[player]):
-      if row != win_row and col != 6:
+    for _, (row, col) in enumerate(self.postions[player]):
+      if row != win_row or col != 6:
         return False
 
-      return True
+    return True
 
 
   def _next_move(self, piece, player, piece_id, dice):
