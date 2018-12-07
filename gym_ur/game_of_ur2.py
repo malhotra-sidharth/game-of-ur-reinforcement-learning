@@ -11,10 +11,12 @@ class GoUrEnv:
     # row 1 for player 1 and row 2 for player 2
     # all set to zero
     self.postions = np.zeros((2, num_pieces), dtype=object)
+    self._initialize_states()
+
 
     # dice roll up
     # 4 pyramidal dice
-    self.dice_up = [0, 1, 2, 3, 4]
+    self.dice_up = [1, 2]
 
     # safe position in war zone
     self.safe = [('b', 4)]
@@ -23,7 +25,15 @@ class GoUrEnv:
     self.double_chance = [('a', 1), ('a', 7), ('b', 4), ('c', 1), ('c', 7)]
 
     # actions_space
-    self.action_space_n = num_pieces
+    self.action_space_n = 25
+
+    # board position mapping
+    self.mapping = {('a', 1): 1, ('a', 2): 2, ('a', 3): 3, ('a', 4): 4,
+                    ('a', 5): 5, ('a', 6): 6, ('a', 7): 7, ('a', 8): 8,
+                    ('b', 1): 9, ('b', 2): 10, ('b', 3):11, ('b', 4):12,
+                    ('b', 5): 13, ('b', 6): 14, ('b', 7): 15, ('b', 8): 16,
+                    ('c', 1):17, ('c', 2): 18, ('c', 3): 19, ('c', 4): 20,
+                    ('c', 5): 21, ('c', 6): 22, ('c', 7): 23, ('c', 8): 24}
 
 
     # 4 actions -> forward, left, right, void
@@ -67,6 +77,7 @@ class GoUrEnv:
     """
     actions = []
     movable_piece_ids = {}
+    movable_piece_board_pos = {}
     for key, piece in enumerate(self.postions[player]):
       action = self._next_move(piece, player, key, dice)
       # check if no change in positions i.e no possible move
@@ -75,17 +86,19 @@ class GoUrEnv:
       if curr_pos[0] != next_pos[0] or curr_pos[1] != next_pos[1]:
         actions.append(action)
         movable_piece_ids[action['piece_id'][1]] = action
+        movable_piece_board_pos[action['board_pos']] = action
 
-    return actions, movable_piece_ids
+    return actions, movable_piece_ids, movable_piece_board_pos
 
 
-  def step(self, action):
+  def step(self, action, dice):
     """
     Takes one step based on the given action
 
     :param action:
     :return: state, reward, done
     """
+    state = (self._create_state(0), self._create_state(1), dice)
     done = False
     reward = 0
     player, piece_id = action['piece_id']
@@ -93,24 +106,30 @@ class GoUrEnv:
     start_row = 'a' if opponent == 0 else 'c'
     self.postions[player][piece_id] = action['next_pos']
     if action['replace_opp']:
+      reward = 10
       # strike of opponent's piece
       idx = self._find_idx(opponent, action['next_pos'])
       self.postions[opponent][idx] = (start_row, 5)
 
+    if action['next_pos'][0] == 'b' and action['next_pos'][1] == 4:
+      reward = 20
+    elif action['next_pos'][0] == 'b':
+      reward = -1
+
     if self._is_win(player):
       done = True
-      reward = 1
+      reward = 100
 
-    return (tuple(self.postions[0]), tuple(self.postions[1])), reward, done, {}
-
-
-  def reset(self):
-    self.postions = np.zeros(self.postions.shape, dtype=object)
-    return (tuple(self.postions[0]), tuple(self.postions[1]))
+    return state, reward, done, {}
 
 
-  def current_state(self):
-    return (tuple(self.postions[0]), tuple(self.postions[1]))
+  def reset(self, dice_up):
+    self._initialize_states()
+    return (self._create_state(0), self._create_state(1), dice_up)
+
+  #
+  # def current_state(self):
+  #   return (tuple(self.postions[0]), tuple(self.postions[1]))
 
 
   def _find_idx(self, opponent, next_pos):
@@ -133,6 +152,24 @@ class GoUrEnv:
 
     return True
 
+
+  def _create_state(self, player):
+    has_start = False
+    start_count = 0
+    on_board = []
+    for _, (row, col) in enumerate(self.postions[player]):
+      if (row == 'a' or row == 'c') and col == 5:
+        has_start = True
+        start_count += 1
+      elif (row == 'a' or row == 'c') and col == 6:
+        continue
+      else:
+        on_board.append((row, col))
+
+    on_board = sorted(on_board)
+    return (start_count, tuple(on_board))
+
+
   def _next_move(self, piece, player, piece_id, dice):
     """
     Player 0 starts in row a, col 5 and
@@ -149,7 +186,8 @@ class GoUrEnv:
       'curr_pos': piece,
       'next_pos': None,
       'double_move': None,
-      'replace_opp': None
+      'replace_opp': None,
+      'board_pos': None,
     }
 
     if action['curr_pos'] == 0:
@@ -172,6 +210,7 @@ class GoUrEnv:
     action['replace_opp'] = replace_opp
     action['next_pos'] = (row, col)
     action['double_move'] = self.is_double((row, col))
+    action['board_pos'] = self.mapping[piece]
     return action
 
 
@@ -256,6 +295,13 @@ class GoUrEnv:
                                                      player)
 
     return row, col, replace_opp
+
+
+  def _initialize_states(self):
+    for i in range(len(self.postions[0])):
+      self.postions[0][i] = ('a', 5)
+      self.postions[1][i] = ('c', 5)
+
 
   def _search_list_for_tuple(self, lst, tpl):
     """

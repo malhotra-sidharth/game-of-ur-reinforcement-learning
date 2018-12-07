@@ -1,3 +1,4 @@
 .idea/
 .ipynb_checkpoints/
 gym_ur/__pycache__/
+MC/pickels/
